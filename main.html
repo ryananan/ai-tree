@@ -55,55 +55,24 @@
 </head>
 
 <body>
+    <img id="image" style="width:100%；">
     <div class="output">
         <canvas class="output_canvas" style="position:absolute; bottom:0px; left:0px;"></canvas>
     </div>
     <div class="container">
-        <canvas class="facemesh_canvas" width="0px" height="0px"
-            style="position:absolute; bottom:20px; right:20px;"></canvas>
+        <canvas class="facemesh_canvas"
+         width="0px" height="0px"
+            style="position:absolute; bottom:20px; right:20px; border:4px solid #0000FF;"></canvas>
         <video class="input_video"></video>
         <!-- width="480px" height="270px" -->
     </div>
-    <img id="image" style="width: 0px;height: 0px;background-color: black;">
-    <!-- <p id="frame_num_display"></p> -->
-
+    <p id="frame_num"></p>
 
 
 </body>
 <script language="javascript" type="text/javascript">
-
-
-    //============================================================
-    //   Utility Function
-    //============================================================
-
-    function project(val, start1, stop1, start2, stop2) {
-        var newVal = (val - start1) / (stop1 - start1) * (stop2 - start2) + start2;
-        return newVal;
-    }
-
-    function distance(ax, ay, bx, by) {
-        var x1 = bx - ax;
-        var y1 = by - ay;
-        var c1 = Math.sqrt(x1 * x1 + y1 * y1);
-        return c1;
-    }
-
-    function getAvg(data) {
-        const total = data.reduce((sum, value) => sum + value, 0);
-        return total / data.length;
-    }
-
-    //============================================================
-    //   Facemesh
-    //============================================================
-
- //Get our video capture device
     const img = document.getElementById("image");
     img.src = "./images/ezgif-frame-188.jpg"
-
-    // const frame_num_display = document.getElementById("frame_num_display");
-    // frame_num_display.textContent = "1"
     //Get our video capture device
     const videoElement = document.getElementsByClassName('input_video')[0];
     const canvas = document.getElementsByClassName('facemesh_canvas')[0];
@@ -113,14 +82,10 @@
     const context = canvas.getContext('2d');
     const context2 = canvas2.getContext('2d');
     var maxFrames = 200;
-    var arrayZ = [];
-    var smoothVal = 25;
-    var frame_num = 100;
-
 
     window.addEventListener('resize', () => {
-        img.height = window.innerHeight
-        img.width = img.height 
+    canvas2.width = window.innerWidth
+    canvas2.height = window.innerHeight
     })
 
 
@@ -190,51 +155,41 @@
     });
     camera.start();
 
-    function loadImage(frame_num_temp) {
-        context2.fillStyle = "black";
-        context2.fillRect(0,0,width2,height2);
-        if (frame_num_temp < maxFrames) {
-            if (frame_num_temp < 10) {
-                frame_num_temp = "00" + frame_num_temp
-            }
-            else if (frame_num_temp > 10 && frame_num_temp < 100) {
-                frame_num_temp = "0" + frame_num_temp
-            }
-            else if (frame_num_temp > 100) {
-                frame_num_temp = frame_num_temp
-            }
-
-            if (arrayZ.length > smoothVal){
-            arrayZ.shift(); //Remove first value
-            }else{
-            arrayZ.push(parseFloat(frame_num_temp));//Make sure push in number
-            }
-            console.log("before " + frame_num_temp)
-            // var frame_num_temp = getAvg(arrayZ).toFixed(0);
-            if (frame_num_temp-frame_num<5 && frame_num_temp-frame_num>-5){
-                frame_num = frame_num
-                console.log("work")
-            }else{
-                frame_num = frame_num_temp
-            }
-            console.log("after " + frame_num)
-
-
-            img.src = "./images/ezgif-frame-" + frame_num + ".jpg"
-            console.log("./images/ezgif-frame-" + frame_num + ".jpg")
-            context2.drawImage(img,width2/2-height2/2,0,height2,height2)
-        }
-        context2.drawImage(img,width2/2-height2/2,0,height2,height2)
+    function project(val, start1, stop1, start2, stop2) {
+        var newVal = (val - start1) / (stop1 - start1) * (stop2 - start2) + start2;
+        return newVal;
     }
 
+    function distance(ax, ay, bx, by) {
+        var x1 = bx - ax;
+        var y1 = by - ay;
+        var c1 = Math.sqrt(x1 * x1 + y1 * y1);
+        return c1;
+    }
 
-//         context2.font = "30px Monospace";
-//         frame_num = String(frame_num) 
-//         context2.fillStyle = 'blue'
-//         context2.fillText(" "+frame_num, 10, 50);
-//         requestAnimationFrame(loadImage);
-// }
-//     requestAnimationFrame(loadImage);
+    function loadImage(frame_num) {
+        if(frame_num<maxFrames){
+            if(frame_num<10){
+                frame_num = "00"+frame_num
+            }
+            else if(frame_num>10 && frame_num<100){
+                frame_num = "0"+frame_num
+            }
+            else if(frame_num>100){
+                frame_num = frame_num
+            }
+            img.src = "./images/ezgif-frame-"+frame_num+".jpg"
+            console.log("./images/ezgif-frame-"+frame_num+".jpg")
+            }
+
+
+        context2.font = "30px Monospace";
+        frame_num = String(frame_num) 
+        context2.fillStyle = 'blue'
+        context2.fillText(" "+frame_num, 10, 50);
+        requestAnimationFrame(loadImage);
+}
+    requestAnimationFrame(loadImage);
 
 </script>
 
