@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <style type="text/css">
+        video {
+            max-width: 0%;
+            height: 0%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+        }
+
+        button {
+            background-color: transparent;
+            color: #0000FF;
+            border: solid #0000FF 4px;
+            width: 300px;
+            padding: 10px;
+            margin: 10px;
+            font-family: 'Staatliches';
+            font-size: 18px;
+            position: fixed;
+            top: 800;
+            left: 0;
+        }
+
+        .container canvas {
+            /*Mirro The Camera */
+            -moz-transform: scaleX(-1);
+            -o-transform: scaleX(-1);
+            -webkit-transform: scaleX(-1);
+            transform: scaleX(-1);
+            filter: FlipH;
+            -ms-filter: "FlipH";
+            padding: 0px;
+            margin: 0px;
+            /*   background-color: white; */
+        }
+
+        .output canvas {
+            padding: 0px;
+            margin: 0px;
+            /*   			background-color: lightblue; */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="output">
+        <canvas class="output_canvas" style="position:absolute; bottom:0px; left:0px;"></canvas>
+    </div>
+    <div class="container">
+        <canvas class="facemesh_canvas" width="0px" height="0px"
+            style="position:absolute; bottom:20px; right:20px;"></canvas>
+        <video class="input_video"></video>
+        <!-- width="480px" height="270px" -->
+    </div>
+    <img id="image" style="width: 0px;height: 0px;background-color: black;">
+    <!-- <p id="frame_num_display"></p> -->
+
+
+
+</body>
+<script language="javascript" type="text/javascript">
+
+
+    //============================================================
+    //   Utility Function
+    //============================================================
+
+    function project(val, start1, stop1, start2, stop2) {
+        var newVal = (val - start1) / (stop1 - start1) * (stop2 - start2) + start2;
+        return newVal;
+    }
+
+    function distance(ax, ay, bx, by) {
+        var x1 = bx - ax;
+        var y1 = by - ay;
+        var c1 = Math.sqrt(x1 * x1 + y1 * y1);
+        return c1;
+    }
+
+    function getAvg(data) {
+        const total = data.reduce((sum, value) => sum + value, 0);
+        return total / data.length;
+    }
+
+    //============================================================
+    //   Facemesh
+    //============================================================
+
+ //Get our video capture device
+    const img = document.getElementById("image");
+    img.src = "./images/ezgif-frame-188.jpg"
+
+    // const frame_num_display = document.getElementById("frame_num_display");
+    // frame_num_display.textContent = "1"
+    //Get our video capture device
+    const videoElement = document.getElementsByClassName('input_video')[0];
+    const canvas = document.getElementsByClassName('facemesh_canvas')[0];
+    const canvas2 = document.getElementsByClassName('output_canvas')[0];
+    var width = canvas.width;
+    var height = canvas.height;
+    const context = canvas.getContext('2d');
+    const context2 = canvas2.getContext('2d');
+    var maxFrames = 200;
+    var arrayZ = [];
+    var smoothVal = 25;
+    var frame_num = 100;
+
+
+    window.addEventListener('resize', () => {
+        img.height = window.innerHeight
+        img.width = img.height 
+    })
+
+
+    var width2 = window.innerWidth;
+    var height2 = window.innerHeight;
+    canvas2.setAttribute("width", width2);
+    canvas2.setAttribute("height", height2);
+
+
+    function onResults(results) {
+        context.save();
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context2.clearRect(0, 0, canvas2.width, canvas2.height);
+
+        var output = document.getElementById("demo");
+
+
+        for (const landmarks of results.multiFaceLandmarks) {
+            drawConnectors(context, landmarks, FACEMESH_TESSELATION,
+                { color: '#0000FF', lineWidth: 1 });
+            drawConnectors(context, landmarks, FACEMESH_RIGHT_EYE, { color: '#D0B0FF' });
+            drawConnectors(context, landmarks, FACEMESH_RIGHT_EYEBROW, { color: '#D0B0FF' });
+            drawConnectors(context, landmarks, FACEMESH_LEFT_EYE, { color: '#D0B0FF' });
+            drawConnectors(context, landmarks, FACEMESH_LEFT_EYEBROW, { color: '#D0B0FF' });
+            drawConnectors(context, landmarks, FACEMESH_FACE_OVAL, { color: '#3030FF' });
+            drawConnectors(context, landmarks, FACEMESH_LIPS, { color: '#D0B0FF' });
+
+            var ll = distance(landmarks[288].x, landmarks[288].y, landmarks[284].x, landmarks[284].y)
+            var lt = distance(landmarks[284].x, landmarks[284].y, landmarks[54].x, landmarks[54].y)
+            var lr = distance(landmarks[54].x, landmarks[54].y, landmarks[58].x, landmarks[58].y)
+            var ld = distance(landmarks[288].x, landmarks[288].y, landmarks[58].x, landmarks[58].y)
+            var squareSize = ll * lt;
+            squareSize *= 3000
+            squareSize = squareSize.toFixed(0)
+            if (squareSize >= maxFrames) {
+                squareSize = maxFrames
+            }
+            console.log(squareSize)
+
+            loadImage(squareSize)
+        }
+
+        drawConnectors(context, results.multiFaceLandmarks, FACEMESH_TESSELATION,
+            { color: '#0000FF', lineWidth: 1.5 });
+
+        context.restore();
+    }
+
+    const faceMesh = new FaceMesh({
+        locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        }
+    });
+    faceMesh.setOptions({
+        maxNumFaces: 1,
+        minDetectionConfidence: 0.9,
+        minTrackingConfidence: 0.9
+    });
+    faceMesh.onResults(onResults);
+
+    const camera = new Camera(videoElement, {
+        onFrame: async () => {
+            await faceMesh.send({ image: videoElement });
+        },
+        width: 1280,
+        height: 720
+    });
+    camera.start();
+
+    function loadImage(frame_num_temp) {
+        context2.fillStyle = "black";
+        context2.fillRect(0,0,width2,height2);
+        if (frame_num_temp < maxFrames) {
+            if (frame_num_temp < 10) {
+                frame_num_temp = "00" + frame_num_temp
+            }
+            else if (frame_num_temp > 10 && frame_num_temp < 100) {
+                frame_num_temp = "0" + frame_num_temp
+            }
+            else if (frame_num_temp > 100) {
+                frame_num_temp = frame_num_temp
+            }
+
+            if (arrayZ.length > smoothVal){
+            arrayZ.shift(); //Remove first value
+            }else{
+            arrayZ.push(parseFloat(frame_num_temp));//Make sure push in number
+            }
+            console.log("before " + frame_num_temp)
+            // var frame_num_temp = getAvg(arrayZ).toFixed(0);
+            if (frame_num_temp-frame_num<5 && frame_num_temp-frame_num>-5){
+                frame_num = frame_num
+                console.log("work")
+            }else{
+                frame_num = frame_num_temp
+            }
+            console.log("after " + frame_num)
+
+
+            img.src = "./images/ezgif-frame-" + frame_num + ".jpg"
+            console.log("./images/ezgif-frame-" + frame_num + ".jpg")
+            context2.drawImage(img,width2/2-height2/2,0,height2,height2)
+        }
+        context2.drawImage(img,width2/2-height2/2,0,height2,height2)
+    }
+
+
+//         context2.font = "30px Monospace";
+//         frame_num = String(frame_num) 
+//         context2.fillStyle = 'blue'
+//         context2.fillText(" "+frame_num, 10, 50);
+//         requestAnimationFrame(loadImage);
+// }
+//     requestAnimationFrame(loadImage);
+
+</script>
+
+</html>
