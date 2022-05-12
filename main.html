@@ -62,7 +62,7 @@
     <div class="container">
         <canvas class="facemesh_canvas"
          width="0px" height="0px"
-            style="position:absolute; bottom:20px; right:20px; border:4px solid #0000FF;"></canvas>
+            style="position:absolute; bottom:20px; right:20px; border:0px solid #0000FF;"></canvas>
         <video class="input_video"></video>
         <!-- width="480px" height="270px" -->
     </div>
@@ -186,7 +186,7 @@
         context2.font = "30px Monospace";
         frame_num = String(frame_num) 
         context2.fillStyle = 'blue'
-        context2.fillText(" "+frame_num, 10, 50);
+        // context2.fillText(" "+frame_num, 10, 50);
         requestAnimationFrame(loadImage);
 }
     requestAnimationFrame(loadImage);
